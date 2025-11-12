@@ -45,13 +45,7 @@ async function run() {
         const result = await usersCollection.insertOne(newUser);
         res.send(result);
       }
-
-
-
     })
-
-
-
 
     // all data show
     app.get('/products', async (req, res) => {
