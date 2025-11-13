@@ -126,7 +126,7 @@ async function run() {
     });
 
 
-// Server-side search for reviews.....
+// Server-side search for reviews.........
 app.get("/reviews", async (req, res) => {
   const search = req.query.search || ""; 
   const query = { foodName: { $regex: search, $options: "i" } }; 
