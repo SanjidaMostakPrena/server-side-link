@@ -31,7 +31,7 @@ async function run() {
     // Root
     app.get('/', (req, res) => res.send('Hello World!'));
 
-    // ===== Users =====
+    //  Users
     app.post('/users', async (req, res) => {
       const newUser = req.body;
       const existingUser = await usersCollection.findOne({ email: newUser.email });
@@ -40,7 +40,7 @@ async function run() {
       res.send(result);
     });
 
-    // ===== Products =====
+    // Products
     app.get('/products', async (req, res) => {
       const result = await productsCollection.find().toArray();
       res.send(result);
@@ -79,7 +79,7 @@ async function run() {
       res.send(result);
     });
 
-    // ===== Reviews =====
+    //Reviews
     app.get('/addreview', async (req, res) => {
       const email = req.query.email;
       const query = email ? { email } : {};
@@ -105,7 +105,7 @@ async function run() {
       res.send({ success: result.deletedCount > 0 });
     });
 
-    // ===== Favorites =====
+    // Favorites
     app.get('/favorites', async (req, res) => {
       const email = req.query.email;
       const favorites = await favoritesCollection.find({ userEmail: email }).toArray();
@@ -124,6 +124,7 @@ async function run() {
       const result = await favoritesCollection.deleteOne({ _id: new ObjectId(req.params.id) });
       res.send({ success: result.deletedCount > 0 });
     });
+
 
     console.log("Connected to MongoDB successfully!");
   } finally {
