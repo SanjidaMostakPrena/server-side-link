@@ -28,7 +28,7 @@ async function run() {
     const usersCollection = db.collection('users');
     const favoritesCollection = db.collection('favorites');
 
-  
+
     app.get('/', (req, res) => res.send('Hello World!'));
 
     //  Users
@@ -124,6 +124,26 @@ async function run() {
       const result = await favoritesCollection.deleteOne({ _id: new ObjectId(req.params.id) });
       res.send({ success: result.deletedCount > 0 });
     });
+
+
+// Server-side search for reviews.....
+app.get("/reviews", async (req, res) => {
+  const search = req.query.search || ""; 
+  const query = { foodName: { $regex: search, $options: "i" } }; 
+
+  try {
+    const reviews = await addreviewCollection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.send(reviews);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: "Server error while searching reviews" });
+  }
+});
+
+
 
 
     console.log("Connected to MongoDB successfully!");
