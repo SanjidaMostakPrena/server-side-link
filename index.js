@@ -28,7 +28,7 @@ async function run() {
     const usersCollection = db.collection('users');
     const favoritesCollection = db.collection('favorites');
 
-    // Root
+  
     app.get('/', (req, res) => res.send('Hello World!'));
 
     //  Users
