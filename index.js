@@ -5,8 +5,20 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 3000;
 
+const serviceAccount =
+new FileInputStream("path/to/serviceAccountKey.json");
+const options = new FirebaseOptions.Builder()
+  .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+  .build();
+
+FirebaseApp.initializeApp(options);
+
+
+
 app.use(cors());
 app.use(express.json());
+
+
 
 // MongoDB URI
 const uri = "mongodb+srv://fooddbUser:4Iy3vB7liNQpBJGq@cluster0.vmnz1az.mongodb.net/?retryWrites=true&w=majority";
@@ -28,10 +40,9 @@ async function run() {
     const usersCollection = db.collection('users');
     const favoritesCollection = db.collection('favorites');
 
-
     app.get('/', (req, res) => res.send('Hello World!'));
 
-    //  Users
+    // ---------------- Users ----------------
     app.post('/users', async (req, res) => {
       const newUser = req.body;
       const existingUser = await usersCollection.findOne({ email: newUser.email });
@@ -40,7 +51,7 @@ async function run() {
       res.send(result);
     });
 
-    // Products
+    // ---------------- Products ----------------
     app.get('/products', async (req, res) => {
       const result = await productsCollection.find().toArray();
       res.send(result);
@@ -79,7 +90,8 @@ async function run() {
       res.send(result);
     });
 
-    //Reviews
+    // ---------------- Reviews ----------------
+    // Get all reviews (optionally by email)
     app.get('/addreview', async (req, res) => {
       const email = req.query.email;
       const query = email ? { email } : {};
@@ -87,25 +99,51 @@ async function run() {
       res.send(result);
     });
 
+    // Get a single review by ID
+    app.get('/addreview/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const review = await addreviewCollection.findOne({ _id: new ObjectId(id) });
+        if (!review) return res.status(404).send({ message: 'Review not found' });
+        res.send(review);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: 'Server error' });
+      }
+    });
+
+    // Add new review
     app.post('/addreview', async (req, res) => {
       const newReview = { ...req.body, createdAt: new Date() };
       const result = await addreviewCollection.insertOne(newReview);
       res.send(result);
     });
 
+    // Update a review
     app.put('/addreview/:id', async (req, res) => {
-      const id = req.params.id;
-      const updateDoc = { $set: req.body };
-      const result = await addreviewCollection.updateOne({ _id: new ObjectId(id) }, updateDoc);
-      res.send(result);
+      try {
+        const id = req.params.id;
+        const updateDoc = { $set: req.body };
+        const result = await addreviewCollection.updateOne({ _id: new ObjectId(id) }, updateDoc);
+
+        if (result.matchedCount > 0) {
+          res.send({ success: true, message: 'Review updated successfully' });
+        } else {
+          res.send({ success: false, message: 'Review not found' });
+        }
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ success: false, message: 'Server error' });
+      }
     });
 
+    // Delete a review
     app.delete('/addreview/:id', async (req, res) => {
       const result = await addreviewCollection.deleteOne({ _id: new ObjectId(req.params.id) });
       res.send({ success: result.deletedCount > 0 });
     });
 
-    // Favorites
+    // ---------------- Favorites ----------------
     app.get('/favorites', async (req, res) => {
       const email = req.query.email;
       const favorites = await favoritesCollection.find({ userEmail: email }).toArray();
@@ -115,7 +153,7 @@ async function run() {
     app.post('/favorites', async (req, res) => {
       const favorite = req.body;
       const exists = await favoritesCollection.findOne({ userEmail: favorite.userEmail, foodId: favorite.foodId });
-      if (exists) return res.send({ success: false, message: "Already in favorites" });
+      if (exists) return res.send({ success: false, message: 'Already in favorites' });
       const result = await favoritesCollection.insertOne(favorite);
       res.send({ success: true, result });
     });
@@ -125,32 +163,13 @@ async function run() {
       res.send({ success: result.deletedCount > 0 });
     });
 
-
-// Server-side search for reviews.........
-app.get("/reviews", async (req, res) => {
-  const search = req.query.search || ""; 
-  const query = { foodName: { $regex: search, $options: "i" } }; 
-
-  try {
-    const reviews = await addreviewCollection
-      .find(query)
-      .sort({ createdAt: -1 })
-      .toArray();
-    res.send(reviews);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: "Server error while searching reviews" });
-  }
-});
-
-
-
-
-    console.log("Connected to MongoDB successfully!");
+    console.log('Connected to MongoDB successfully!');
   } finally {
-    // await client.close(); 
+    // Do not close the client to keep the server running
+    // await client.close();
   }
 }
+
 run().catch(console.dir);
 
 app.listen(port, () => console.log(`Server running on port ${port}`));

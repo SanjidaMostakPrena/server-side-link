@@ -11,8 +11,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "admin": "^1.4.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "firebase": "^12.5.0",
     "mongodb": "^7.0.0"
   }
 }
